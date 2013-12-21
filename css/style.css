@@ -59,6 +59,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .main li.has-children > .item .tree{display:block;}
 
 .main .name{cursor:move;margin:0 4px 0 0;}
+.main .bold > .item .name{font-weight:bold;}
 
 .main .expand{position:absolute;top:0;left:-12px;}
 .main .expand:before{content:'-';}
