@@ -3,6 +3,14 @@ window.storage = {};
 $(function(){
 	function saveJSON(){
 		localStorage['storage'] = JSON.stringify(window.storage);
+
+		$.ajax({
+			type: "POST",
+			url: "todo.php",
+			data: {json:JSON.stringify(window.storage)}
+		}).complete(function() {
+			syncdone();
+		});
 	}
 	function loadJSON(){
 		window.storage = JSON.parse(localStorage['storage']);
@@ -69,6 +77,15 @@ $(function(){
 			var index = $(this).index();
 			$(this).attr('data-index', index);
 		});
+	}
+	function syncdone(){
+		var link = $('a.e-sync');
+		if(link.find('span').size()==0){
+			link.append('<span></span>');
+		}
+		var dt = new Date();
+		var dts = dt.getDate()+'-'+Number(dt.getMonth()+1)+'-'+dt.getFullYear()+' : '+ (dt.getHours()<10?"0":"") + dt.getHours() +'-'+ (dt.getMinutes()<10?"0":"") + dt.getMinutes() +'-'+ (dt.getSeconds()<10?"0":"") + dt.getSeconds();
+		link.find('span').text('[посл. '+ dts +']');
 	}
 	function events(){
 		$('li').off('contextmenu').on('contextmenu', function(e){
@@ -217,6 +234,10 @@ $(function(){
 		e.preventDefault();
 		$('li.expanded > .item > .tree').click();
 	});
+	$('a.e-sync').on('click', function(e){
+		e.preventDefault();
+		saveJSON();
+	});
 	
 	// add item
 	function addItem(parentID, indexNumber){
@@ -263,10 +284,24 @@ $(function(){
 		loadJSON();
 		JSONtoDOM();
 	} else {
-		storage.params = {};
-		storage.list = {};
-		storage.params.increment = 1;
-
-		saveJSON();
+		$.ajax({
+			type: "POST",
+			url: "todo.php",
+			data: {e:"get"},
+			dataType :'json'
+		}).complete(function(data){
+			var result = JSON.parse(data.responseText);
+			if(result instanceof Object && result.list instanceof Object){
+				storage = result;
+				saveJSON();
+				JSONtoDOM();
+				syncdone();
+			} else {
+				storage.params = {};
+				storage.list = {};
+				storage.params.increment = 1;
+				saveJSON();
+			}
+		});
 	}
 });
