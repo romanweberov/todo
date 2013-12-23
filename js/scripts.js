@@ -119,6 +119,9 @@ $(function(){
 			var id = Number(li.attr('id').replace('id-',''));
 			if($(this).is(':checked')){
 				li.addClass('checked');
+				li.attr('data-bold', 'normal').removeClass('bold');
+				li.appendTo(li.parent());
+				reCalcIndex(li.parent());
 			} else {
 				li.removeClass('checked');
 			}
@@ -243,7 +246,7 @@ $(function(){
 	function addItem(parentID, indexNumber){
 		$('#add').each(function(){
 			var $this = $(this);
-			$this.find(':text').val('');
+			$this.find(':text,textarea').val('');
 			$this.show();
 			$this.find('.add-button').unbind('click').click(function(e){
 				e.preventDefault();
