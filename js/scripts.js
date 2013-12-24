@@ -45,12 +45,22 @@ $(function(){
 		$('.main ul').sortable({
 			placeholder: "ui-state-highlight",
 			handle: ".name",
+			axis:'y',
 			stop:function(event, ui){
 				reCalcIndex(ui.item.parent());
 				DOMtoJSON();
 				saveJSON();
 			}
 		});
+
+		var userAgent = navigator.userAgent.toLowerCase();
+		if(userAgent.match(/firefox/)) {
+			$('li').bind( "sortstart", function (event, ui) {
+				ui.helper.css('margin-top', $(window).scrollTop());
+			}).bind( "sortbeforestop", function (event, ui) {
+				ui.helper.css('margin-top', 4);
+			});
+		}   
 
 		events();
 	}
@@ -200,6 +210,7 @@ $(function(){
 				$(this).find('.tx:first').val(name);
 				$(this).find('textarea').val(description);
 				$(this).show();
+				$('<div id="overlay"></div>').appendTo('body');
 			});
 		}
 	});
@@ -208,6 +219,7 @@ $(function(){
 	$('#edit .cancel-button').on('click', function(e){
 		e.preventDefault();
 		$('#edit').hide().removeAttr('data-id').find(':text,textarea').val('');
+		$('#overlay').remove();
 	});
 	$('#edit .edit-button').on('click', function(e){
 		e.preventDefault();
@@ -244,6 +256,7 @@ $(function(){
 	
 	// add item
 	function addItem(parentID, indexNumber){
+		$('<div id="overlay"></div>').appendTo('body');
 		$('#add').each(function(){
 			var $this = $(this);
 			$this.find(':text,textarea').val('');
@@ -265,14 +278,27 @@ $(function(){
 				storage.params.increment+=1;
 		
 				$this.hide();
+				$('#overlay').remove();
 
 				JSONtoDOM();
+				
+				$('#id-'+id).each(function(){
+					if($(this).prev().is('.checked')){
+						while($(this).prev().is('.checked')){
+							$(this).insertBefore($(this).prev());
+						}
+						reCalcIndex($(this).parent());
+						DOMtoJSON();
+					}
+				});
+				
 				saveJSON();
 			});
 			
 			$this.find('.cancel-button').unbind('click').click(function(e){
 				e.preventDefault();
 				$this.hide();
+				$('#overlay').remove();
 			});
 		});
 	}

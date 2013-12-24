@@ -97,9 +97,10 @@ i{font-family:'FontAwesome';font-style:normal;display:inline-block;width:14px;ma
 .main-menu .button{margin:0 10px 0 0;}
 .main-menu i{margin:0 3px 0 0;}
 
-.popup{display:none;position:fixed;top:50%;border:1px solid #fff;background:#e5eecf;width:320px;left:50%;margin:-130px 0 0 -180px;padding:20px;}
+.popup{z-index:500;display:none;position:fixed;top:50%;border:1px solid #fff;background:#e5eecf;width:320px;left:50%;margin:-130px 0 0 -180px;padding:20px;}
 .popup .form{padding:0 0 14px 0;}
 .popup .tx{border:1px solid #9CC525;font-size:12px;padding:3px 5px 4px 5px;width:308px;}
 .popup textarea.tx{height:70px;padding-right:0;width:312px;}
 .popup .action a{text-align:center;width:60px;}
 .popup .action a:first-child{margin:0 12px 0 0;width:214px;font-weight:bold;}
+#overlay{position:fixed;top:0;left:0;z-index:400;background:rgba(0,0,0,0.5);width:100%;height:100%;}
