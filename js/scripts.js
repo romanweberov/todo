@@ -18,7 +18,7 @@ $(function(){
 	function JSONtoDOM(){
 		$('.main').hide().empty();
 		$.each(window.storage.list, function(i, val){
-			var str = '<li id="id-'+ i +'" data-index="'+ val.index +'" data-bold="'+ val.bold +'" data-state="'+ val.state +'" class=" '+ val.state +' '+ val.bold +' '+ val.checked +'"><div class="item">';
+			var str = '<li id="id-'+ i +'" data-index="'+ val.index +'" data-bold="'+ val.bold +'" data-state="'+ val.state +'" data-closed="'+ val.closed +'" class=" '+ val.state +' '+ val.bold +' '+ val.checked +' '+ val.process +'"><div class="item">';
 			str += '<a href="#expand" class="tree '+ val.state +'"></a>';
 			str += '<span class="input"><input type="checkbox" '+ (val.checked?"checked":"") +' title="Отметить как выполненное"></span>';
 			str += '<span class="name">'+ val.name +'</span>';
@@ -78,6 +78,8 @@ $(function(){
 			result[id].bold = li.attr('data-bold');
 			result[id].checked = li.find('>.item input').is(':checked') ? 'checked' : '';
 			result[id].description = li.find('>.item .desc-inner').val();
+			result[id].closed = Number(li.attr('data-closed'));
+			result[id].process = li.is('.process') ? 'process' : '';
 		});
 
 		window.storage.list = result;
@@ -128,8 +130,10 @@ $(function(){
 			var li = $(this).closest('li');
 			var id = Number(li.attr('id').replace('id-',''));
 			if($(this).is(':checked')){
-				li.addClass('checked');
+				li.addClass('checked').removeClass('process');
 				li.attr('data-bold', 'normal').removeClass('bold');
+				var dt = new Date();
+				li.attr('data-closed', dt.getTime());
 				if(li.parent().find('>.checked').size()>0){
 					li.insertBefore(li.parent().find('>.checked:eq(1)'));
 				} else {
@@ -138,6 +142,7 @@ $(function(){
 				reCalcIndex(li.parent());
 			} else {
 				li.removeClass('checked');
+				li.attr('data-closed', 0);
 				li.insertBefore(li.parent().find('>.checked:first'));
 			}
 
@@ -167,6 +172,22 @@ $(function(){
 				li.attr('data-bold', 'bold').addClass('bold');
 			}
 			
+			$('#context').mouseleave();
+
+			DOMtoJSON();
+			saveJSON();
+		}
+	});
+	$('#context .e-pcs').on('click', function(e){
+		e.preventDefault();
+		if($('#context').attr('data-id').length>0){
+			var li = $('#id-'+ $('#context').attr('data-id'));
+			if(!li.hasClass('process')){
+				li.addClass('process');
+			} else {
+				li.removeClass('process');
+			}
+
 			$('#context').mouseleave();
 
 			DOMtoJSON();
