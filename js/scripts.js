@@ -130,10 +130,15 @@ $(function(){
 			if($(this).is(':checked')){
 				li.addClass('checked');
 				li.attr('data-bold', 'normal').removeClass('bold');
-				li.appendTo(li.parent());
+				if(li.parent().find('>.checked').size()>0){
+					li.insertBefore(li.parent().find('>.checked:eq(1)'));
+				} else {
+					li.appendTo(li.parent());
+				}
 				reCalcIndex(li.parent());
 			} else {
 				li.removeClass('checked');
+				li.insertBefore(li.parent().find('>.checked:first'));
 			}
 
 			DOMtoJSON();
