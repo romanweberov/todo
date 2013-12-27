@@ -29,6 +29,7 @@ table{border-collapse:collapse;border-spacing:0;}
 .cf:after{clear:both;}
 .cf{zoom:1;}
 .hide{display:none;}
+ins{text-decoration:none;}
 
 /*!
  *  Font Awesome 4.0.3 by @davegandy - http://fontawesome.io - @fontawesome
@@ -67,8 +68,10 @@ table{border-collapse:collapse;border-spacing:0;}
 .main .desc.hide{display:none;}
 .main .desc:before{font-family:'FontAwesome';content:'';color:rgba(0,0,0,0.1);cursor:pointer;}
 .main .item:hover .desc:before{color:#fff;}
-.main .desc-inner{display:none;}
+.main .desc-inner,.main .desc .files{display:none;}
 .main .visible > .desc-inner{display:block;position:absolute;top:0;left:0;padding:5px 0 5px 5px;border:1px solid #9CC525;background:#fff;height:120px;width:480px;overflow:auto;color:#000;z-index:30;}
+.main .visible > .files{display:block;height:auto;z-index:10;background:#fff;width:490px;position:absolute;top:130px;padding:2px 0 0 0;}
+.main .visible > .files a{font-size:12px;}
 
 .main .expand{position:absolute;top:0;left:-12px;}
 .main .expand:before{content:'-';}
@@ -93,7 +96,7 @@ i{font-family:'FontAwesome';font-style:normal;display:inline-block;width:14px;ma
 
 .button{display:inline-block;border:1px solid #ffffff;box-shadow:0 0 1px 1px #9cc525;background:#e5eecf;border-radius:5px;color:#000;padding:2px 8px 3px 7px;}
 .button:hover{background:#d3e4a6;color:#000;}
-	
+
 .main-menu{padding:0 0 20px 0;}
 .main-menu .button{margin:0 10px 0 0;}
 .main-menu i{margin:0 3px 0 0;}
@@ -104,4 +107,43 @@ i{font-family:'FontAwesome';font-style:normal;display:inline-block;width:14px;ma
 .popup textarea.tx{height:70px;padding-right:0;width:312px;}
 .popup .action a{text-align:center;width:60px;}
 .popup .action a:first-child{margin:0 12px 0 0;width:214px;font-weight:bold;}
+.uploadbar{min-height:39px;border:1px dashed #9CC525;position:relative;margin-bottom:4px;padding:0 0 1px 0;}
+.uploadbar:before{content:'Перетащите файлы сюда';font-size:11px;position:absolute;top:50%;left:50%;margin:-9px 0 0 -64px;color:#999;}
+.uploadbar.over{border-color:#000;}
+.uploadbar a,.main .item .files a{display:block;background:#e5eecf;width:36px;padding:25px 0 0 0;height:11px;font:8px Arial;color:#000;text-align:center;position:relative;z-index:1;float:left;margin:1px 0 0 1px;border:1px solid #9CC525;}
+.uploadbar a.loading:after{content:'';font-family:'FontAwesome';position:absolute;top:3px;left:9px;font-size:20px;-moz-animation: spin 2s infinite linear;-o-animation: spin 2s infinite linear;-webkit-animation: spin 2s infinite linear;animation: spin 2s infinite linear;}
+.uploadbar a span,.main .item .files a span{display:block;position:absolute;top:4px;left:0;width:36px;text-align:center;font:12px Arial;}
+.uploadbar a.loading span,.uploadbar a.loading i{display:none !important;}
+.uploadbar a.file i{position:absolute;display:block;margin:0;width:auto;left:15px;bottom:2px;}
+.uploadbar a.file i:before{content:'';font-size:12px;}
+.uploadbar a.file i:hover{cursor:pointer;color:#d20000;}
+.uploadbar a ins{display:none;}
+.uploadbar a.loading ins{display:block;}
+
+@-moz-keyframes spin {
+  0% { -moz-transform: rotate(0deg); }
+  100% { -moz-transform: rotate(359deg); }
+}
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(359deg); }
+}
+@-o-keyframes spin {
+  0% { -o-transform: rotate(0deg); }
+  100% { -o-transform: rotate(359deg); }
+}
+@-ms-keyframes spin {
+  0% { -ms-transform: rotate(0deg); }
+  100% { -ms-transform: rotate(359deg); }
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(359deg); }
+}
+
 #overlay{position:fixed;top:0;left:0;z-index:400;background:rgba(0,0,0,0.5);width:100%;height:100%;}
+
+#closed{position:absolute;top:0;right:0;padding:10px;background:#fff;max-width:240px;}
+#closed div{padding:4px 10px 5px 10px;}
+#closed .dt{background:#c1d191;margin:5px 0 5px 0;}
+#closed .itm:nth-child(odd){background:#eee;}

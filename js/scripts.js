@@ -22,8 +22,16 @@ $(function(){
 			str += '<a href="#expand" class="tree '+ val.state +'"></a>';
 			str += '<span class="input"><input type="checkbox" '+ (val.checked?"checked":"") +' title="Отметить как выполненное"></span>';
 			str += '<span class="name">'+ val.name +'</span>';
-			str += '<span class="desc '+ (val.description?"":" hide") +'"><textarea readonly class="desc-inner">'+ val.description +'</textarea></span>';
-			str += '</div></li>';
+			str += '<span class="desc '+ (val.description?"":" hide") +'"><textarea readonly class="desc-inner">'+ val.description +'</textarea>';
+			if(val.files && val.files.length){
+				str += '<span class="files cf">';
+				$.each(val.files, function(i, value){
+					var ext = getExt(value);
+					str += '<a target="_blank" href="upload/'+ value +'" title="'+ value +'" class="file"><span>.'+ ext +'</span></a>';
+				});
+				str += '</span>';
+			}
+			str += '</span></div></li>';
 
 			if($('#id-'+ val.parent +'-inner').size()==0){
 				$('<ul id="id-'+ val.parent +'-inner"></ul>').appendTo('#id-'+ val.parent);
@@ -60,7 +68,9 @@ $(function(){
 			}).bind( "sortbeforestop", function (event, ui) {
 				ui.helper.css('margin-top', 4);
 			});
-		}   
+		}
+		
+		DOMtoCLOSED();
 
 		events();
 	}
@@ -80,6 +90,12 @@ $(function(){
 			result[id].description = li.find('>.item .desc-inner').val();
 			result[id].closed = Number(li.attr('data-closed'));
 			result[id].process = li.is('.process') ? 'process' : '';
+			if(li.find('>.item .files a.file').size()>0){
+				result[id].files = [];
+				li.find('>.item .files a.file').each(function(){
+					result[id].files.push($(this).attr('title'));
+				});
+			}
 		});
 
 		window.storage.list = result;
@@ -90,6 +106,9 @@ $(function(){
 			$(this).attr('data-index', index);
 		});
 	}
+	function getExt(fname){
+		return fname.substr((~-fname.lastIndexOf(".") >>> 0) + 2);
+	}
 	function syncdone(){
 		var link = $('a.e-sync');
 		if(link.find('span').size()==0){
@@ -98,6 +117,31 @@ $(function(){
 		var dt = new Date();
 		var dts = dt.getDate()+'-'+Number(dt.getMonth()+1)+'-'+dt.getFullYear()+' : '+ (dt.getHours()<10?"0":"") + dt.getHours() +'-'+ (dt.getMinutes()<10?"0":"") + dt.getMinutes() +'-'+ (dt.getSeconds()<10?"0":"") + dt.getSeconds();
 		link.find('span').text('[посл. '+ dts +']');
+	}
+	function DOMtoCLOSED(){
+		var closed = [];
+		$('.main li').each(function(){
+			var dc = Number($(this).attr('data-closed'));
+			if(dc>0){
+				var name = $(this).find('>.item .name').text();
+				closed.push([dc, name]);
+			}
+		});
+		closed.sort().reverse();
+		
+		var str = '', currentDate = '';
+		$.each(closed, function(i, val){
+			var dt = new Date();
+			dt.setTime(val[0]);
+			var formatted = dt.getFullYear() +'-'+ Number(dt.getMonth()+1) + '-' + dt.getDate();
+			if((i==0 && currentDate == '') || currentDate != formatted){
+				str += '<div class="dt">'+ formatted +'</div>';
+			}
+			currentDate = formatted;
+			str += '<div class="itm">'+ val[1] +'</div>';
+		});
+		
+		$('#closed').empty().append(str);
 	}
 	function events(){
 		$('li').off('contextmenu').on('contextmenu', function(e){
@@ -134,7 +178,7 @@ $(function(){
 				li.attr('data-bold', 'normal').removeClass('bold');
 				var dt = new Date();
 				li.attr('data-closed', dt.getTime());
-				if(li.parent().find('>.checked').size()>0){
+				if(li.parent().find('>.checked').size()>1){
 					li.insertBefore(li.parent().find('>.checked:eq(1)'));
 				} else {
 					li.appendTo(li.parent());
@@ -145,7 +189,8 @@ $(function(){
 				li.attr('data-closed', 0);
 				li.insertBefore(li.parent().find('>.checked:first'));
 			}
-
+			
+			DOMtoCLOSED();
 			DOMtoJSON();
 			saveJSON();
 		});
@@ -233,8 +278,17 @@ $(function(){
 			var description = item.find('.desc textarea').val();
 			
 			$('#edit').attr('data-id', id).each(function(){
+				$('.uploadbar').parent().insertAfter($(this).find('.form:last'));
 				$(this).find('.tx:first').val(name);
 				$(this).find('textarea').val(description);
+				$(this).find('.uploadbar').each(function(){
+					var ub = $(this);
+					item.find('.files a.file').each(function(){
+						var name = $(this).attr('title');
+						var ext = getExt(name);
+						$('<a target="_blank" href="upload/'+ name +'" class="file '+ ext +'" title="'+ name +'"><i></i><span>.'+ ext +'</span></a>').appendTo(ub);
+					});
+				});
 				$(this).show();
 				$('<div id="overlay"></div>').appendTo('body');
 			});
@@ -245,6 +299,7 @@ $(function(){
 	$('#edit .cancel-button').on('click', function(e){
 		e.preventDefault();
 		$('#edit').hide().removeAttr('data-id').find(':text,textarea').val('');
+		$('#edit').find('.uploadbar').empty().parent().insertAfter('#add .form:last');
 		$('#overlay').remove();
 	});
 	$('#edit .edit-button').on('click', function(e){
@@ -259,11 +314,29 @@ $(function(){
 		if(description.length > 3){
 			item.find('.desc').removeClass('hide');
 		}
-		
+
+		item.find('.files').empty();
+		$('#edit .uploadbar .file').each(function(i){
+			if(i==0){
+				if(item.find('.files').size()==0){
+					item.find('.desc').append('<span class="files"></span>');
+				}
+			}
+			$(this).clone().appendTo(item.find('.files'));
+		});
+
 		DOMtoJSON();
 		saveJSON();
 		
 		$('#edit .cancel-button').click();
+	});
+	
+	$(document).on("click","a.file i", function(e){
+		e.preventDefault();
+	    var name = $(this).parent().attr('title');
+		$(this).parent().fadeOut('slow', function(){
+			$(this).remove();
+		});
 	});
 
 	// expand-all, collapse-all
@@ -299,7 +372,12 @@ $(function(){
 				result.index = indexNumber;
 				result.bold = '';
 				result.checked = '';
-				
+				result.files = [];
+				$this.find('.file').each(function(){
+					var name = $(this).attr('title');
+					result.files.push(name);
+				});
+
 				storage.list[id] = result;
 				storage.params.increment+=1;
 		
@@ -359,4 +437,67 @@ $(function(){
 			}
 		});
 	}
+
+	var dropbox = document.getElementById("dropbox");
+
+	dropbox.addEventListener("dragenter", dragEnter, false);
+	dropbox.addEventListener("dragexit", dragExit, false);
+	dropbox.addEventListener("dragover", dragOver, false);
+	dropbox.addEventListener("drop", drop, false);
+
+	function dragEnter(e){
+		e.stopPropagation();
+		e.preventDefault();
+		$(e.target).addClass('over');
+	}
+	function dragExit(e){
+		e.stopPropagation();
+		e.preventDefault();
+		$(e.target).removeClass('over');
+	}
+	function dragOver(e){
+		e.stopPropagation();
+		e.preventDefault();
+	}
+	function drop(e){
+		e.stopPropagation();
+		e.preventDefault();
+
+		var files = e.dataTransfer.files;
+		var count = files.length;
+
+		if(count > 0){
+			handleFiles(files);
+		}
+	}
+	function handleFiles(files){
+		$.each(files, function(i, val){
+			var file = files[i];
+
+			var form = new FormData();
+			form.append("thefile", file);
+
+			function random(min, max) {
+			  return parseInt(Math.random() * (max - min) + min);
+			}
+			var ext = getExt(file.name);
+			
+			var number = random(1, 99999);
+			$('<a id="f'+ number +'" target="_blank" href="upload/'+ file.name +'" class="loading file '+ ext +'" title="'+ file.name +'"><i></i><span>.'+ ext +'</span><ins>'+ Number(file.size/1000000).toFixed(2) +'m</ins></a>').appendTo('#dropbox');
+
+			xhr = new XMLHttpRequest();
+			xhr.upload.addEventListener("progress", function(e){
+				if(e.lengthComputable){
+					var perc = (e.loaded / e.total) * 100 + "%";
+					//console.log(perc);
+				}
+			}, false);
+			xhr.addEventListener("load", function(){
+				$('#f'+ number).removeClass('loading');
+			}, false);
+			xhr.open("POST", "upload.php", true);
+			xhr.send(form);
+		});
+	}
+
 });
