@@ -62,7 +62,7 @@ ins{text-decoration:none;}
 .main .name{cursor:move;margin:0 14px 0 0;}
 .main .bold > .item .name{font-weight:bold;}
 .main .checked > .item .name{text-decoration:line-through;}
-.main .process > .item .name:after{content:'';font-family:'FontAwesome';display:inline-block;font-weight:normal;margin:0 0 0 6px;color:#d20000;}
+.main .process > .item .name:before{content:'';font-family:'FontAwesome';display:inline-block;font-weight:normal;margin:0 6px 0 0;color:#d20000;}
 
 .main .desc{position:relative;}
 .main .desc.hide{display:none;}
