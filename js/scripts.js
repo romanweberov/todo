@@ -1,6 +1,28 @@
 window.storage = {};
 
 $(function(){
+	/* john resig */
+	(function(){
+	  var cache = {};
+	  this.tmpl = function tmpl(str, data){
+	    var fn = !/\W/.test(str) ?
+	      cache[str] = cache[str] || tmpl(document.getElementById(str).innerHTML) :
+	      new Function("obj",
+	        "var p=[],print=function(){p.push.apply(p,arguments);};" +
+	        "with(obj){p.push('" +
+	        str
+	          .replace(/[\r\t\n]/g, " ")
+	          .split("<%").join("\t")
+	          .replace(/((^|%>)[^\t]*)'/g, "$1\r")
+	          .replace(/\t=(.*?)%>/g, "',$1,'")
+	          .split("\t").join("');")
+	          .split("%>").join("p.push('")
+	          .split("\r").join("\\'")
+	      + "');}return p.join('');");
+	    return data ? fn( data ) : fn;
+	  };
+	})();
+
 	function saveJSON(){
 		localStorage['storage'] = JSON.stringify(window.storage);
 
@@ -276,12 +298,12 @@ $(function(){
 			
 			var name = item.find('.name').text();
 			var description = item.find('.desc textarea').val();
-			
-			$('#edit').attr('data-id', id).each(function(){
-				$('.uploadbar').parent().insertAfter($(this).find('.form:last'));
-				$(this).find('.tx:first').val(name);
-				$(this).find('textarea').val(description);
-				$(this).find('.uploadbar').each(function(){
+
+			$(tmpl("itemOptions", {name:name, description:description, action:"Сохранить"})).appendTo('body')
+			.each(function(){
+				var $this = $(this).find('.popup');
+				$this.attr('data-id', id).show();
+				$this.find('.uploadbar').each(function(){
 					var ub = $(this);
 					item.find('.files a.file').each(function(){
 						var name = $(this).attr('title');
@@ -289,54 +311,51 @@ $(function(){
 						$('<a target="_blank" href="upload/'+ name +'" class="file '+ ext +'" title="'+ name +'"><i></i><span>.'+ ext +'</span></a>').appendTo(ub);
 					});
 				});
-				$(this).show();
-				$('<div id="overlay"></div>').appendTo('body');
+
+				$this.find('.action .button:first').on('click', function(e){
+					e.preventDefault();
+					var id = $this.attr('data-id');
+					var name = $this.find('.tx:first').val();
+					var description = $this.find('textarea').val();
+		
+					var item = $('#id-'+id +' >.item');
+					item.find('.name').text(name);
+					item.find('textarea').val(description);
+					if(description.length > 3){
+						item.find('.desc').removeClass('hide');
+					}
+
+					item.find('.files').empty();
+					$this.find('.uploadbar .file').each(function(i){
+						if(i==0){
+							if(item.find('.files').size()==0){
+								item.find('.desc').append('<span class="files"></span>');
+							}
+						}
+						$(this).clone().appendTo(item.find('.files'));
+					});
+
+					DOMtoJSON();
+					saveJSON();
+					
+					$this.find('.cancel-button').click();
+				});
+				
+				dropboxInit();
+
 			});
 		}
 	});
-	
-	//edit item
-	$('#edit .cancel-button').on('click', function(e){
-		e.preventDefault();
-		$('#edit').hide().removeAttr('data-id').find(':text,textarea').val('');
-		$('#edit').find('.uploadbar').empty().parent().insertAfter('#add .form:last');
-		$('#overlay').remove();
-	});
-	$('#edit .edit-button').on('click', function(e){
-		e.preventDefault();
-		var id = $('#edit').attr('data-id');
-		var name = $('#edit .tx:first').val();
-		var description = $('#edit textarea').val();
-		
-		var item = $('#id-'+id +' >.item');
-		item.find('.name').text(name);
-		item.find('textarea').val(description);
-		if(description.length > 3){
-			item.find('.desc').removeClass('hide');
-		}
 
-		item.find('.files').empty();
-		$('#edit .uploadbar .file').each(function(i){
-			if(i==0){
-				if(item.find('.files').size()==0){
-					item.find('.desc').append('<span class="files"></span>');
-				}
-			}
-			$(this).clone().appendTo(item.find('.files'));
-		});
-
-		DOMtoJSON();
-		saveJSON();
-		
-		$('#edit .cancel-button').click();
-	});
-	
 	$(document).on("click","a.file i", function(e){
 		e.preventDefault();
 	    var name = $(this).parent().attr('title');
 		$(this).parent().fadeOut('slow', function(){
 			$(this).remove();
 		});
+	}).on('click', '.popup .cancel-button', function(e){
+		e.preventDefault();
+		$(this).closest('.popup-wrap').remove();
 	});
 
 	// expand-all, collapse-all
@@ -352,15 +371,14 @@ $(function(){
 		e.preventDefault();
 		saveJSON();
 	});
-	
+
 	// add item
 	function addItem(parentID, indexNumber){
-		$('<div id="overlay"></div>').appendTo('body');
-		$('#add').each(function(){
-			var $this = $(this);
-			$this.find(':text,textarea').val('');
-			$this.show();
-			$this.find('.add-button').unbind('click').click(function(e){
+		$(tmpl("itemOptions", {name:"", description:"", action:"Добавить"})).appendTo('body')
+		.each(function(){
+			var $this = $(this).find('.popup');
+			$this.show()
+			.find('.action .button:first').click(function(e){
 				e.preventDefault();
 				var result = {}, id = storage.params.increment;
 
@@ -380,9 +398,6 @@ $(function(){
 
 				storage.list[id] = result;
 				storage.params.increment+=1;
-		
-				$this.hide();
-				$('#overlay').remove();
 
 				JSONtoDOM();
 				
@@ -397,21 +412,19 @@ $(function(){
 				});
 				
 				saveJSON();
+
+				$this.find('.cancel-button').click();
 			});
-			
-			$this.find('.cancel-button').unbind('click').click(function(e){
-				e.preventDefault();
-				$this.hide();
-				$('#overlay').remove();
-			});
+
+			dropboxInit();
 		});
 	}
-	
+
 	$('a.e-add-root').on('click', function(e){
 		e.preventDefault();
 		addItem(0, $('#id-0-inner > li').size());
 	});
-	
+
 	// init
 	if(localStorage['storage']){
 		loadJSON();
@@ -438,66 +451,69 @@ $(function(){
 		});
 	}
 
-	var dropbox = document.getElementById("dropbox");
+	function dropboxInit(){
+		var dropbox = document.getElementById("dropbox");
 
-	dropbox.addEventListener("dragenter", dragEnter, false);
-	dropbox.addEventListener("dragexit", dragExit, false);
-	dropbox.addEventListener("dragover", dragOver, false);
-	dropbox.addEventListener("drop", drop, false);
+		dropbox.addEventListener("dragenter", dragEnter, false);
+		dropbox.addEventListener("dragexit", dragExit, false);
+		dropbox.addEventListener("dragover", dragOver, false);
+		dropbox.addEventListener("drop", drop, false);
 
-	function dragEnter(e){
-		e.stopPropagation();
-		e.preventDefault();
-		$(e.target).addClass('over');
-	}
-	function dragExit(e){
-		e.stopPropagation();
-		e.preventDefault();
-		$(e.target).removeClass('over');
-	}
-	function dragOver(e){
-		e.stopPropagation();
-		e.preventDefault();
-	}
-	function drop(e){
-		e.stopPropagation();
-		e.preventDefault();
-
-		var files = e.dataTransfer.files;
-		var count = files.length;
-
-		if(count > 0){
-			handleFiles(files);
+		function dragEnter(e){
+			e.stopPropagation();
+			e.preventDefault();
+			$(e.target).addClass('over');
 		}
-	}
-	function handleFiles(files){
-		$.each(files, function(i, val){
-			var file = files[i];
+		function dragExit(e){
+			e.stopPropagation();
+			e.preventDefault();
+			$(e.target).removeClass('over');
+		}
+		function dragOver(e){
+			e.stopPropagation();
+			e.preventDefault();
+		}
+		function drop(e){
+			e.stopPropagation();
+			e.preventDefault();
 
-			var form = new FormData();
-			form.append("thefile", file);
+			var files = e.dataTransfer.files;
+			var count = files.length;
 
-			function random(min, max) {
-			  return parseInt(Math.random() * (max - min) + min);
+			if(count > 0){
+				handleFiles(files);
 			}
-			var ext = getExt(file.name);
-			
-			var number = random(1, 99999);
-			$('<a id="f'+ number +'" target="_blank" href="upload/'+ file.name +'" class="loading file '+ ext +'" title="'+ file.name +'"><i></i><span>.'+ ext +'</span><ins>'+ Number(file.size/1000000).toFixed(2) +'m</ins></a>').appendTo('#dropbox');
+		}
+		function handleFiles(files){
+			$.each(files, function(i, val){
+				var file = files[i];
 
-			xhr = new XMLHttpRequest();
-			xhr.upload.addEventListener("progress", function(e){
-				if(e.lengthComputable){
-					var perc = (e.loaded / e.total) * 100 + "%";
-					//console.log(perc);
+				var form = new FormData();
+				form.append("thefile", file);
+
+				function random(min, max) {
+				  return parseInt(Math.random() * (max - min) + min);
 				}
-			}, false);
-			xhr.addEventListener("load", function(){
-				$('#f'+ number).removeClass('loading');
-			}, false);
-			xhr.open("POST", "upload.php", true);
-			xhr.send(form);
-		});
+				var ext = getExt(file.name);
+			
+				var number = random(1, 99999);
+				$('<a id="f'+ number +'" target="_blank" href="upload/'+ file.name +'" class="loading file '+ ext +'" title="'+ file.name +'"><i></i><span>.'+ ext +'</span><ins>'+ Number(file.size/1000000).toFixed(2) +'m</ins></a>').appendTo('#dropbox');
+
+				xhr = new XMLHttpRequest();
+				xhr.upload.addEventListener("progress", function(e){
+					if(e.lengthComputable){
+						var perc = (e.loaded / e.total) * 100 + "%";
+						//console.log(perc);
+					}
+				}, false);
+				xhr.addEventListener("load", function(){
+					$('#f'+ number).removeClass('loading');
+				}, false);
+				xhr.open("POST", "upload.php", true);
+				xhr.send(form);
+			});
+		}
 	}
 
 });
+
